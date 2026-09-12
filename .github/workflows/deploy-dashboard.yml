@@ -35,9 +35,9 @@ jobs:
         working-directory: dashboard
         env:
           # Point this at your repo's raw state.json (edit YOUR_USERNAME/YOUR_REPO)
-          VITE_STATE_URL: https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/data/state.json
+          VITE_STATE_URL: https://raw.githubusercontent.com/mario4l/graciebarra-gardengrove-tracker/main/data/state.json
           # If deploying to https://<user>.github.io/<repo>/, set to "/<repo>/"
-          VITE_BASE_PATH: /YOUR_REPO/
+          VITE_BASE_PATH: /graciebarra-gardengrove-tracker/
         run: npm run build
 
       - uses: actions/upload-pages-artifact@v3
