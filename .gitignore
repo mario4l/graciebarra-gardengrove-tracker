@@ -1,0 +1,5 @@
+node_modules/
+debug/
+dashboard/dist/
+dashboard/node_modules/
+.env

@@ -1,0 +1,39 @@
+name: Track GBGG sign-ups
+
+on:
+  schedule:
+    # Runs at the top of every hour. Edit the cron to change frequency.
+    - cron: "0 * * * *"
+  workflow_dispatch: {} # lets you click "Run workflow" manually to test
+
+permissions:
+  contents: write
+
+jobs:
+  track:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run tracker
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+        run: npm run track
+
+      - name: Commit updated roster data
+        run: |
+          git config user.name "gbgg-tracker-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/state.json
+          git diff --cached --quiet || git commit -m "Update roster data [skip ci]"
+          git push

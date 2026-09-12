@@ -1,0 +1,14 @@
+{
+  "name": "gbgg-comp-tracker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Tracks Gracie Barra Garden Grove sign-ups on JJWL event pages and sends a push notification on new registrations.",
+  "type": "commonjs",
+  "scripts": {
+    "track": "node track.js",
+    "track:debug": "DEBUG=1 node track.js"
+  },
+  "dependencies": {
+    "playwright": "^1.47.0"
+  }
+}
