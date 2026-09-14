@@ -3,8 +3,8 @@
  * -------------------------------------------------
  * For every event in config.json:
  *   1. Opens the event page in a real (headless) browser
- *   2. Types the team name into the competitor search box
- *   3. Reads the filtered roster table
+ *   2. Clicks the "Competitors" tab and lets its data table load
+ *   3. Filters that table by your team name (same as typing in the search box)
  *   4. Compares it to the last-known roster (data/state.json)
  *   5. Sends a push notification (via ntfy.sh) if anyone new has registered
  *   6. Saves the new roster back to data/state.json
@@ -40,9 +40,10 @@ function saveJson(filePath, data) {
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
 }
 
-// A stable key for a competitor row so we can tell "new" from "already seen".
-// Falls back gracefully if some columns are blank.
+// A stable key for a competitor row. fighter_id (from the site's own data)
+// is far more reliable than string-matching name/division/belt/weight.
 function rowKey(row) {
+  if (row.id != null && row.id !== "") return `id:${row.id}`;
   return [row.name, row.surname, row.division, row.belt, row.weight]
     .map((v) => (v || "").toLowerCase().trim())
     .join("|");
@@ -60,15 +61,6 @@ async function saveDebugArtifacts(page, eventId) {
   );
 }
 
-// --- core scrape -------------------------------------------------------
-
-const SEARCH_INPUT_SELECTORS = [
-  'input[placeholder*="search" i]',
-  'input[type="search"]',
-  '.search input',
-  '.search-box input',
-];
-
 async function findFirst(page, selectors) {
   for (const sel of selectors) {
     const el = await page.$(sel);
@@ -77,85 +69,78 @@ async function findFirst(page, selectors) {
   return null;
 }
 
+// --- core scrape -------------------------------------------------------
+//
+// The competitors table on JJWL event pages is a jQuery DataTable
+// (#users_offers_list) that only gets initialized once you click the
+// "Competitors" tab (#menu_competitors). It loads the full competitor list
+// into the browser in one shot, then filters/paginates client-side - so
+// once it's loaded, we can read matching rows directly from the DataTables
+// API (window.table) instead of scraping visible <td> cells. This also
+// gives us each competitor's real ID for reliable "is this new?" checks.
+
 async function scrapeEvent(page, event, teamName) {
   await page.goto(event.url, { waitUntil: "networkidle", timeout: 60000 });
 
-  // The roster table on JJWL pages loads asynchronously - give it a moment.
-  await page.waitForTimeout(2000);
-
-  const searchInput = await findFirst(page, SEARCH_INPUT_SELECTORS);
-  if (!searchInput) {
+  const tabSelectors = ["#menu_competitors", 'a[href="#Competitors"]', '[href="#Competitors"]'];
+  const tab = await findFirst(page, tabSelectors);
+  if (!tab) {
     if (DEBUG) await saveDebugArtifacts(page, event.id);
     throw new Error(
-      `Could not find the competitor search box on "${event.name}". ` +
-        `Run with DEBUG=1 and check debug/${event.id}.png + .html to find the right selector, ` +
-        `then update SEARCH_INPUT_SELECTORS in track.js.`
+      `Could not find the "Competitors" tab on "${event.name}". ` +
+        `Run with DEBUG=1 and check debug/${event.id}.png + .html.`
+    );
+  }
+  await tab.click();
+
+  // Wait for the DataTable to exist and finish its initial ajax load.
+  try {
+    await page.waitForFunction(
+      () => window.table && typeof window.table.rows === "function" && window.table.rows().count() > 0,
+      { timeout: 30000 }
+    );
+  } catch {
+    if (DEBUG) await saveDebugArtifacts(page, event.id);
+    throw new Error(
+      `Competitors table on "${event.name}" never loaded any rows. ` +
+        `The event may have no competitors yet, or the page structure changed - ` +
+        `run with DEBUG=1 and check debug/${event.id}.png + .html.`
     );
   }
 
-  await searchInput.click();
-  await searchInput.fill("");
-  await searchInput.type(teamName, { delay: 30 });
-
-  // let the table re-filter client-side
-  await page.waitForTimeout(2000);
-
-  const rows = await page.evaluate((team) => {
-    const tables = Array.from(document.querySelectorAll("table"));
-    // Pick the table whose header row mentions "Academy" - that's the roster table.
-    const table = tables.find((t) => t.innerText.includes("Academy"));
-    if (!table) return { headerFound: false, rows: [] };
-
-    const headerCells = Array.from(
-      table.querySelectorAll("thead th, tr:first-child th, tr:first-child td")
-    ).map((c) => c.innerText.trim().toLowerCase());
-
-    const idx = (label) => headerCells.findIndex((h) => h.includes(label));
-    const iName = idx("name");
-    const iSurname = idx("surname");
-    const iGender = idx("gender");
-    const iDivision = idx("age") >= 0 ? idx("age") : idx("division");
-    const iBelt = idx("belt");
-    const iWeight = idx("weight");
-    const iAcademy = idx("academy");
-    const iOrg = idx("organization");
-    const iMat = idx("mat");
-    const iTime = idx("time");
-
-    const bodyRows = Array.from(table.querySelectorAll("tbody tr"));
-    const out = [];
-    for (const tr of bodyRows) {
-      const cells = Array.from(tr.querySelectorAll("td")).map((td) =>
-        td.innerText.trim()
-      );
-      if (cells.length === 0) continue;
-      const academy = iAcademy >= 0 ? cells[iAcademy] : "";
-      if (!academy.toLowerCase().includes(team.toLowerCase())) continue;
-      out.push({
-        name: iName >= 0 ? cells[iName] : "",
-        surname: iSurname >= 0 ? cells[iSurname] : "",
-        gender: iGender >= 0 ? cells[iGender] : "",
-        division: iDivision >= 0 ? cells[iDivision] : "",
-        belt: iBelt >= 0 ? cells[iBelt] : "",
-        weight: iWeight >= 0 ? cells[iWeight] : "",
-        academy,
-        organization: iOrg >= 0 ? cells[iOrg] : "",
-        mat: iMat >= 0 ? cells[iMat] : "",
-        time: iTime >= 0 ? cells[iTime] : "",
-      });
-    }
-    return { headerFound: true, rows: out };
+  // Apply the global search, same as typing into the on-page search box.
+  await page.evaluate((team) => {
+    window.table.search(team).draw();
   }, teamName);
 
-  if (!rows.headerFound) {
-    if (DEBUG) await saveDebugArtifacts(page, event.id);
-    throw new Error(
-      `Could not find the roster table (no "Academy" column) on "${event.name}". ` +
-        `Run with DEBUG=1 to inspect debug/${event.id}.png + .html.`
-    );
-  }
+  // DataTables debounces search by 'searchDelay' (1000ms on this site).
+  await page.waitForTimeout(1500);
 
-  return rows.rows;
+  const rows = await page.evaluate(() => {
+    return window.table
+      .rows({ search: "applied" })
+      .data()
+      .toArray()
+      .map((r) => ({
+        id: r.fighter_id ?? null,
+        name: r.fighter_name || "",
+        surname: r.fighter_surname || "",
+        gender: r.cat_gender || "",
+        division: r.cat_age || "",
+        belt: r.cat_belt || "",
+        weight: r.cat_weight || "",
+        academy: r.academy_name || "",
+        organization: r.organization_name || "",
+        mat: r.fight_mat || "",
+        time: r.fight_time || "",
+      }));
+  });
+
+  // Defensive filter: keep only rows whose academy actually matches, in case
+  // the global search happened to match some other column instead.
+  return rows.filter((r) =>
+    (r.academy || "").toLowerCase().includes(teamName.toLowerCase())
+  );
 }
 
 // --- push notification (ntfy.sh) ------------------------------------------
