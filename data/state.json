@@ -3,7 +3,7 @@
     "pan-americans-iii-gi-adults": {
       "eventName": "Pan Americans III - Gi Adults",
       "eventUrl": "https://www.jjworldleague.com/events/pan-americans-iii-gi-adults",
-      "lastChecked": "2026-09-14T23:45:30.564Z",
+      "lastChecked": "2026-09-15T04:12:20.780Z",
       "rows": [
         {
           "id": "653448",
@@ -52,6 +52,39 @@
           "division": "Masters 2",
           "belt": "Beginner (White + No College Wrestling)",
           "weight": "168 & Under",
+          "academy": "Gracie Barra Garden Grove",
+          "organization": "Gracie Barra",
+          "mat": "TBA",
+          "time": "TBA"
+        }
+      ]
+    },
+    "san-diego-xix-gi-adults": {
+      "eventName": "San Diego XIX - Gi Adults",
+      "eventUrl": "https://www.jjworldleague.com/events/san-diego-xix-gi-adults",
+      "lastChecked": "2026-09-15T04:12:24.260Z",
+      "rows": [
+        {
+          "id": "670572",
+          "name": "Jacobe",
+          "surname": "Bolanos ",
+          "gender": "Male (No-Gi)",
+          "division": "Adult",
+          "belt": "INTERMEDIATE (BLUE AND PURPLE OR SOME COLLEGE WRESTLING)",
+          "weight": "141 & Under  ",
+          "academy": "Gracie Barra Garden Grove",
+          "organization": "Gracie Barra",
+          "mat": "TBA",
+          "time": "TBA"
+        },
+        {
+          "id": "673740",
+          "name": "Joshua",
+          "surname": "Fontan Sr.",
+          "gender": "Male (No-Gi)",
+          "division": "Masters 1",
+          "belt": "INTERMEDIATE (BLUE AND PURPLE OR SOME COLLEGE WRESTLING)",
+          "weight": "182 & Under",
           "academy": "Gracie Barra Garden Grove",
           "organization": "Gracie Barra",
           "mat": "TBA",
