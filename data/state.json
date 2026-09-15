@@ -3,7 +3,7 @@
     "pan-americans-iii-gi-adults": {
       "eventName": "Pan Americans III - Gi Adults",
       "eventUrl": "https://www.jjworldleague.com/events/pan-americans-iii-gi-adults",
-      "lastChecked": "2026-09-15T14:44:49.417Z",
+      "lastChecked": "2026-09-15T18:48:03.218Z",
       "rows": [
         {
           "id": "653448",
@@ -26,6 +26,19 @@
           "division": "Jr Teen",
           "belt": "Yellow",
           "weight": "100-109",
+          "academy": "Gracie Barra Garden Grove",
+          "organization": "Gracie Barra",
+          "mat": "TBA",
+          "time": "TBA"
+        },
+        {
+          "id": "675290",
+          "name": "Billy",
+          "surname": "Pham",
+          "gender": "Male GI",
+          "division": "Masters 3",
+          "belt": "White",
+          "weight": "154 & Under",
           "academy": "Gracie Barra Garden Grove",
           "organization": "Gracie Barra",
           "mat": "TBA",
@@ -62,7 +75,7 @@
     "san-diego-xix-gi-adults": {
       "eventName": "San Diego XIX - Gi Adults",
       "eventUrl": "https://www.jjworldleague.com/events/san-diego-xix-gi-adults",
-      "lastChecked": "2026-09-15T14:44:52.902Z",
+      "lastChecked": "2026-09-15T18:48:06.877Z",
       "rows": [
         {
           "id": "670572",
